@@ -4,9 +4,14 @@ variable "name" {
   type    = string
   default = "corp.keithrozario.com"
 }
-variable "password" {
-  type    = string
-  default = "SuperSecretPassw0rd"
+
+resource "random_password" "this" {
+  length           = 12
+  special          = false
+  min_lower = 1
+  min_numeric = 1
+  min_special = 1
+  min_upper = 1
 }
 
 variable "common_tags" {
@@ -16,10 +21,9 @@ variable "common_tags" {
   }
 }
 
-
 resource "aws_directory_service_directory" "domain_controller" {
   name     = var.name
-  password = var.password
+  password = random_password.this.result
   edition  = "Standard"
   type     = "MicrosoftAD"
 
@@ -44,4 +48,10 @@ output "domain_controller_name" {
 
 output "domain_controler_dns_ip_addresses" {
   value = sort(aws_directory_service_directory.domain_controller.dns_ip_addresses)
+}
+
+resource "aws_ssm_parameter" "password" {
+  name  = "AD_Password"
+  type  = "SecureString"
+  value = random_password.this.result
 }

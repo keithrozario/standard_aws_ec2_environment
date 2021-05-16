@@ -32,10 +32,7 @@ module "vpc" {
   enable_dns_hostnames             = true
   enable_dns_support               = true
 
-  tags = {
-    Terraform   = "true"
-    Environment = "WorkspacesFsX"
-  }
+  tags = local.common_tags
 }
 
 module "windows_ec2" {
@@ -66,4 +63,11 @@ module "connect_to_AD" {
   domain_controller_id              = module.AD.domain_controller_id
   domain_controller_name            = module.AD.domain_controller_name
   domain_controler_dns_ip_addresses = module.AD.domain_controler_dns_ip_addresses
+}
+
+module "fsx_for_windows" {
+  source = "./fsx_for_windows"
+  active_directory_id = module.AD.domain_controller_id
+  subnet_ids             = [module.vpc.private_subnets[0]]
+  allowed_security_group_ids = [module.vpc.default_security_group_id]
 }
