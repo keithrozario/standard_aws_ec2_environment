@@ -2,7 +2,7 @@
 ## Applicable to both linux and windows machines
 ## Additional policies can be added separately
 
-variable iam_role_name{}
+variable "iam_role_name" {}
 
 resource "aws_iam_role" "this" {
   name = var.iam_role_name
@@ -26,7 +26,7 @@ EOF
 }
 
 resource "aws_iam_instance_profile" "this" {
-  name = "${var.iam_role_name}InstanceRole"
+  name = var.iam_role_name
   role = aws_iam_role.this.name
 }
 
@@ -50,5 +50,5 @@ resource "aws_iam_role_policy_attachment" "cloud_watch_agent_attach" {
 }
 
 output "iam_role_name" {
-    value = var.iam_role_name
+  value = var.iam_role_name
 }

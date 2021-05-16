@@ -25,7 +25,7 @@ resource "aws_ssm_document" "ad-join-domain" {
 
 resource "aws_ssm_association" "ad_join_domain" {
   name = aws_ssm_document.ad-join-domain.name
-  
+
   targets {
     key    = "InstanceIds"
     values = var.instance_ids
@@ -38,25 +38,25 @@ resource "aws_iam_policy" "adAttachPolicy" {
   description = "For seamless connection to AD"
 
   policy = jsonencode({
-     Version = "2012-10-17"
-      Statement = [
-        {
-          Action   = [
-              "ssm:CreateAssociation",
-              "ssm:UpdateAssociationStatus",
-              "ssm:ListAssociation",
-              "ssm:DescribeAssociation"]
-          Effect   = "Allow"
-          Resource = "*"
-        },
-        {
-          Action   = [
-              "ds:CreateComputer"]
-          Effect   = "Allow"
-          Resource = "arn:aws:ds:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:directory/${var.domain_controller_id}" 
-        }
-      ]
-    })
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ssm:CreateAssociation",
+          "ssm:UpdateAssociationStatus",
+          "ssm:ListAssociation",
+        "ssm:DescribeAssociation"]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
+        Action = [
+        "ds:CreateComputer"]
+        Effect   = "Allow"
+        Resource = "arn:aws:ds:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:directory/${var.domain_controller_id}"
+      }
+    ]
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "ad_attach" {

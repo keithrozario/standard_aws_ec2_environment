@@ -4,6 +4,6 @@ data "aws_security_group" "workspacesSG" {
 
 locals {
   common_tags = {
-      project = "WindowsFSX"
+    project = "WindowsFSX"
   }
 }

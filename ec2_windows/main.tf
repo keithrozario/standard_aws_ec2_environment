@@ -1,35 +1,35 @@
-variable subnet_ids {}
-variable vpc_security_group_ids {}
-variable common_tags {
-  type = map
+variable "subnet_ids" {}
+variable "vpc_security_group_ids" {}
+variable "common_tags" {
+  type = map(any)
   default = {
     source = "Terraform"
+  }
 }
-}
-variable name {
-  type = string
+variable "name" {
+  type    = string
   default = "WindowsServer"
 }
-variable instance_type {
-  type = string
+variable "instance_type" {
+  type    = string
   default = "t3.large"
 }
 
 
 # AMI
 data "aws_ami" "windows" {
-    most_recent = true     
+  most_recent = true
 
-    filter {
-       name   = "name"
-       values = ["Windows_Server-2019-English-Full-Base-*"]  
-    }
-    filter {
-        name   = "virtualization-type"
-        values = ["hvm"]  
-    }
+  filter {
+    name   = "name"
+    values = ["Windows_Server-2019-English-Full-Base-*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 
-    owners = ["801119661308"] # Canonical
+  owners = ["801119661308"] # Canonical
 }
 
 resource "aws_instance" "this" {
@@ -43,19 +43,19 @@ resource "aws_instance" "this" {
   tags = merge(
     { Name = "${var.name}${count.index}" },
     { OS = "Windows" },
-    var.common_tags)
+  var.common_tags)
 }
 
 # IAM Role
 module "attach_iam_role" {
-    source = "../attach_iam_roles"
-    iam_role_name = "${var.name}Role"
+  source        = "../attach_iam_roles"
+  iam_role_name = var.name
 }
 
-output instance_ids {
-   value = aws_instance.this[*].id
+output "instance_ids" {
+  value = aws_instance.this[*].id
 }
 
-output ec2_role_name {
-   value = module.attach_iam_role.iam_role_name
+output "ec2_role_name" {
+  value = module.attach_iam_role.iam_role_name
 }
