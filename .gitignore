@@ -1,2 +1,4 @@
 terraform.tfstate*
 .terraform*
+*.tfvars*
+client_vpn/easy-rsa*

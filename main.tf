@@ -1,7 +1,3 @@
-provider "aws" {
-  region = "ap-southeast-1"
-}
-
 terraform {
   required_providers {
 
@@ -12,6 +8,12 @@ terraform {
 
   }
 }
+
+provider "aws" {
+  region = "ap-southeast-1"
+}
+
+variable cloudflare_api_token {}
 
 
 module "vpc" {
@@ -42,12 +44,12 @@ module "windows_ec2" {
   common_tags            = local.common_tags
 }
 
-module "linux_ec2" {
-  source                 = "./ec2_linux"
-  subnet_ids             = module.vpc.private_subnets
-  vpc_security_group_ids = [module.vpc.default_security_group_id]
-  common_tags            = local.common_tags
-}
+# module "linux_ec2" {
+#   source                 = "./ec2_linux"
+#   subnet_ids             = module.vpc.private_subnets
+#   vpc_security_group_ids = [module.vpc.default_security_group_id]
+#   common_tags            = local.common_tags
+# }
 
 module "AD" {
   source      = "./active_directory"
@@ -70,4 +72,22 @@ module "fsx_for_windows" {
   active_directory_id = module.AD.domain_controller_id
   subnet_ids             = [module.vpc.private_subnets[0]]
   allowed_security_group_ids = [module.vpc.default_security_group_id]
+}
+
+module dns_record {
+  source = "./dns_record"
+  root_domain_name = "klayers.cloud"
+  sub_domain_name = "sub.klayers.cloud"
+  vpn_domain_name = "vpn.sub.klayers.cloud"
+  common_tags = local.common_tags
+  cloudflare_api_token = var.cloudflare_api_token
+}
+
+module client_vpn {
+  source = "./client_vpn"
+  active_directory_id = module.AD.domain_controller_id
+  vpc_id      = module.vpc.vpc_id
+  subnet_ids  = module.vpc.public_subnets
+  security_group_ids = [module.vpc.default_security_group_id]
+  target_network_cidr = module.vpc.vpc_cidr_block
 }
