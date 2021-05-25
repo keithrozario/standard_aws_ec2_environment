@@ -3,7 +3,7 @@ terraform {
 
     aws = {
       source  = "hashicorp/aws"
-      version = "3.20.0"
+      version = "3.41.0"
     }
 
   }
@@ -14,7 +14,6 @@ provider "aws" {
 }
 
 variable cloudflare_api_token {}
-
 
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
@@ -44,12 +43,12 @@ module "windows_ec2" {
   common_tags            = local.common_tags
 }
 
-# module "linux_ec2" {
-#   source                 = "./ec2_linux"
-#   subnet_ids             = module.vpc.private_subnets
-#   vpc_security_group_ids = [module.vpc.default_security_group_id]
-#   common_tags            = local.common_tags
-# }
+module "linux_ec2" {
+  source                 = "./ec2_linux"
+  subnet_ids             = module.vpc.private_subnets
+  vpc_security_group_ids = [module.vpc.default_security_group_id]
+  common_tags            = local.common_tags
+}
 
 module "AD" {
   source      = "./active_directory"
@@ -90,4 +89,15 @@ module client_vpn {
   subnet_ids  = module.vpc.public_subnets
   security_group_ids = [module.vpc.default_security_group_id]
   target_network_cidr = module.vpc.vpc_cidr_block
+}
+
+module dns_firewall {
+  source = "./dns_firewall"
+  vpc_id = module.vpc.vpc_id
+  common_tags = local.common_tags
+}
+
+module private_hosted_zone {
+  source = "./private_hosted_zone"
+  vpc_id = module.vpc.vpc_id
 }

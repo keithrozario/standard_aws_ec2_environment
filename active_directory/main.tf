@@ -26,6 +26,7 @@ resource "aws_directory_service_directory" "domain_controller" {
   password = random_password.this.result
   edition  = "Standard"
   type     = "MicrosoftAD"
+  description = "Created By Terraform"
 
   vpc_settings {
     vpc_id     = var.vpc_id
