@@ -36,19 +36,19 @@ module "vpc" {
   tags = local.common_tags
 }
 
-module "windows_ec2" {
-  source                 = "./ec2_windows"
-  subnet_ids             = module.vpc.private_subnets
-  vpc_security_group_ids = [module.vpc.default_security_group_id]
-  common_tags            = local.common_tags
-}
+# module "windows_ec2" {
+#   source                 = "./ec2_windows"
+#   subnet_ids             = module.vpc.private_subnets
+#   vpc_security_group_ids = [module.vpc.default_security_group_id]
+#   common_tags            = local.common_tags
+# }
 
-module "linux_ec2" {
-  source                 = "./ec2_linux"
-  subnet_ids             = module.vpc.private_subnets
-  vpc_security_group_ids = [module.vpc.default_security_group_id]
-  common_tags            = local.common_tags
-}
+# module "linux_ec2" {
+#   source                 = "./ec2_linux"
+#   subnet_ids             = module.vpc.private_subnets
+#   vpc_security_group_ids = [module.vpc.default_security_group_id]
+#   common_tags            = local.common_tags
+# }
 
 module "AD" {
   source      = "./active_directory"
@@ -57,14 +57,14 @@ module "AD" {
   common_tags = local.common_tags
 }
 
-module "connect_to_AD" {
-  source                            = "./connect_to_AD"
-  instance_ids                      = module.windows_ec2.instance_ids
-  ec2_role_name                     = module.windows_ec2.ec2_role_name
-  domain_controller_id              = module.AD.domain_controller_id
-  domain_controller_name            = module.AD.domain_controller_name
-  domain_controler_dns_ip_addresses = module.AD.domain_controler_dns_ip_addresses
-}
+# module "connect_to_AD" {
+#   source                            = "./connect_to_AD"
+#   instance_ids                      = module.windows_ec2.instance_ids
+#   ec2_role_name                     = module.windows_ec2.ec2_role_name
+#   domain_controller_id              = module.AD.domain_controller_id
+#   domain_controller_name            = module.AD.domain_controller_name
+#   domain_controler_dns_ip_addresses = module.AD.domain_controler_dns_ip_addresses
+# }
 
 module "fsx_for_windows" {
   source = "./fsx_for_windows"
