@@ -14,6 +14,10 @@ variable "instance_type" {
   type    = string
   default = "t3.large"
 }
+variable "ami_name"{
+  type = string
+  default = "Windows_Server-2019-English-Full-Base-*"
+}
 
 
 # AMI
@@ -22,14 +26,14 @@ data "aws_ami" "windows" {
 
   filter {
     name   = "name"
-    values = ["Windows_Server-2019-English-Full-Base-*"]
+    values = [var.ami_name]
   }
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
   }
 
-  owners = ["801119661308"] # Canonical
+  owners = ["amazon"]
 }
 
 resource "aws_instance" "this" {

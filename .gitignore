@@ -3,3 +3,4 @@ terraform.tfstate*
 *.tfvars*
 client_vpn/easy-rsa*
 .DS_STORE
+.idea

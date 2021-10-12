@@ -32,29 +32,33 @@ module "vpc" {
   default_vpc_enable_dns_support   = true
   enable_dns_hostnames             = true
   enable_dns_support               = true
+  map_public_ip_on_launch          = true
 
   tags = local.common_tags
 }
 
 # module "windows_ec2" {
-#   source                 = "./ec2_windows"
-#   subnet_ids             = module.vpc.private_subnets
-#   vpc_security_group_ids = [module.vpc.default_security_group_id]
-#   common_tags            = local.common_tags
+#  source                 = "./ec2_windows"
+#  subnet_ids             = [module.vpc.private_subnets[0], module.vpc.private_subnets[0], module.vpc.private_subnets[1]]
+#  vpc_security_group_ids = [aws_security_group.allow_ingress_from_workspaces.id]
+#  common_tags            = local.common_tags
+# #  ami_name = "Windows_Server-2019-English-Full-SQL_2019_Web*"
 # }
 
 # module "linux_ec2" {
 #   source                 = "./ec2_linux"
-#   subnet_ids             = module.vpc.private_subnets
+#   subnet_ids             = [module.vpc.private_subnets[0]]
 #   vpc_security_group_ids = [module.vpc.default_security_group_id]
 #   common_tags            = local.common_tags
 # }
 
 module "AD" {
+# The amin password will be randomly generated and set inside a ssm parameter: "AD_Password"
   source      = "./active_directory"
   vpc_id      = module.vpc.vpc_id
   subnet_ids  = module.vpc.private_subnets
   common_tags = local.common_tags
+
 }
 
 # module "connect_to_AD" {
@@ -82,14 +86,14 @@ module dns_record {
   cloudflare_api_token = var.cloudflare_api_token
 }
 
-module client_vpn {
-  source = "./client_vpn"
-  active_directory_id = module.AD.domain_controller_id
-  vpc_id      = module.vpc.vpc_id
-  subnet_ids  = module.vpc.public_subnets
-  security_group_ids = [module.vpc.default_security_group_id]
-  target_network_cidr = module.vpc.vpc_cidr_block
-}
+# module client_vpn {
+#   source = "./client_vpn"
+#   active_directory_id = module.AD.domain_controller_id
+#   vpc_id      = module.vpc.vpc_id
+#   subnet_ids  = module.vpc.public_subnets
+#   security_group_ids = [module.vpc.default_security_group_id]
+#   target_network_cidr = module.vpc.vpc_cidr_block
+# }
 
 module dns_firewall {
   source = "./dns_firewall"
@@ -100,4 +104,11 @@ module dns_firewall {
 module private_hosted_zone {
   source = "./private_hosted_zone"
   vpc_id = module.vpc.vpc_id
+}
+
+module "db" {
+  source = "./rds"
+  subnet_ids = module.vpc.database_subnets
+  vpc_id = module.vpc.vpc_id
+  vpc_cidr_block = module.vpc.vpc_cidr_block
 }
