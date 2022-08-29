@@ -6,6 +6,9 @@ variable "common_tags" {
     source = "Terraform"
   }
 }
+variable "kms_key_id"{
+  type = string
+}
 variable "name" {
   type    = string
   default = "LinuxServer"
@@ -38,6 +41,11 @@ resource "aws_instance" "this" {
     { Name = "${var.name}${count.index}" },
     { OS = "AmazonLinux" },
   var.common_tags)
+  root_block_device {
+    encrypted = true
+    kms_key_id = var.kms_key_id
+    volume_size = 100  #in GiB
+  }
 }
 
 # IAM Role
