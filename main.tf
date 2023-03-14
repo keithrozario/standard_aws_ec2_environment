@@ -3,17 +3,25 @@ terraform {
 
     aws = {
       source  = "hashicorp/aws"
-      version = "3.41.0"
     }
 
   }
+
+  cloud {
+    organization = "aws-demos"
+
+    workspaces {
+      name = "verified-access"
+    }
+  }
 }
+
+
 
 provider "aws" {
   region = "ap-southeast-1"
 }
 
-variable cloudflare_api_token {}
 
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
@@ -37,78 +45,49 @@ module "vpc" {
   tags = local.common_tags
 }
 
-# module "windows_ec2" {
-#  source                 = "./ec2_windows"
-#  subnet_ids             = [module.vpc.private_subnets[0], module.vpc.private_subnets[0], module.vpc.private_subnets[1]]
-#  vpc_security_group_ids = [aws_security_group.allow_ingress_from_workspaces.id]
-#  common_tags            = local.common_tags
-# #  ami_name = "Windows_Server-2019-English-Full-SQL_2019_Web*"
-# }
-
-# module "linux_ec2" {
-#   source                 = "./ec2_linux"
-#   subnet_ids             = [module.vpc.private_subnets[0]]
-#   vpc_security_group_ids = [module.vpc.default_security_group_id]
-#   common_tags            = local.common_tags
-# }
-
-module "AD" {
-# The amin password will be randomly generated and set inside a ssm parameter: "AD_Password"
-  source      = "./active_directory"
-  vpc_id      = module.vpc.vpc_id
-  subnet_ids  = module.vpc.private_subnets
-  common_tags = local.common_tags
-
-}
-
-# module "connect_to_AD" {
-#   source                            = "./connect_to_AD"
-#   instance_ids                      = module.windows_ec2.instance_ids
-#   ec2_role_name                     = module.windows_ec2.ec2_role_name
-#   domain_controller_id              = module.AD.domain_controller_id
-#   domain_controller_name            = module.AD.domain_controller_name
-#   domain_controler_dns_ip_addresses = module.AD.domain_controler_dns_ip_addresses
-# }
-
-module "fsx_for_windows" {
-  source = "./fsx_for_windows"
-  active_directory_id = module.AD.domain_controller_id
+module "linux_ec2" {
+  source                 = "./ec2_linux"
   subnet_ids             = [module.vpc.private_subnets[0]]
-  allowed_security_group_ids = [module.vpc.default_security_group_id]
+  vpc_security_group_ids = [aws_security_group.allow_all_egress.id]
+  common_tags            = local.common_tags
 }
 
-module dns_record {
-  source = "./dns_record"
-  root_domain_name = "klayers.cloud"
-  sub_domain_name = "sub.klayers.cloud"
-  vpn_domain_name = "vpn.sub.klayers.cloud"
-  common_tags = local.common_tags
-  cloudflare_api_token = var.cloudflare_api_token
-}
 
-# module client_vpn {
-#   source = "./client_vpn"
-#   active_directory_id = module.AD.domain_controller_id
-#   vpc_id      = module.vpc.vpc_id
-#   subnet_ids  = module.vpc.public_subnets
-#   security_group_ids = [module.vpc.default_security_group_id]
-#   target_network_cidr = module.vpc.vpc_cidr_block
-# }
 
-module dns_firewall {
-  source = "./dns_firewall"
-  vpc_id = module.vpc.vpc_id
-  common_tags = local.common_tags
-}
+module "alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 8.0"
 
-module private_hosted_zone {
-  source = "./private_hosted_zone"
-  vpc_id = module.vpc.vpc_id
-}
+  name = "verified-access-alb"
 
-module "db" {
-  source = "./rds"
-  subnet_ids = module.vpc.database_subnets
-  vpc_id = module.vpc.vpc_id
-  vpc_cidr_block = module.vpc.vpc_cidr_block
+  load_balancer_type = "application"
+
+  vpc_id             = module.vpc.vpc_id
+  subnets            = module.vpc.public_subnets
+  security_groups    = [aws_security_group.load_balancer_sg.id]
+
+  target_groups = [
+    {
+      name_prefix      = "pref-"
+      backend_protocol = "HTTP"
+      backend_port     = 80
+      target_type      = "instance"
+      targets = {
+        my_target = {
+          target_id = module.linux_ec2.instance_ids[0]
+          port = 80
+        }
+      }
+    }
+  ]
+
+  https_listeners = [
+    {
+      port               = 443
+      protocol           = "HTTPS"
+      certificate_arn    = "arn:aws:acm:ap-southeast-1:047051505898:certificate/24e7f201-52af-48bd-82e3-ae605a595e63"
+      target_group_index = 0
+    }
+  ]
+
 }
