@@ -16,20 +16,20 @@ variable "instance_type" {
 }
 
 # AMI
-data "aws_ami" "amazon-linux-2" {
+data "aws_ami" "amazon-linux-2023" {
   owners      = ["amazon"]
   most_recent = true
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-ebs"]
+    values = ["al2023-ami-*-kernel-6.1-x86_64"]
   }
 }
 
 resource "aws_instance" "this" {
   count = length(var.subnet_ids)
 
-  ami                    = data.aws_ami.amazon-linux-2.id
+  ami                    = data.aws_ami.amazon-linux-2023.id
   instance_type          = var.instance_type
   subnet_id              = var.subnet_ids[count.index]
   vpc_security_group_ids = var.vpc_security_group_ids

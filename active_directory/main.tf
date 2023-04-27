@@ -50,6 +50,10 @@ output "domain_controler_dns_ip_addresses" {
   value = sort(aws_directory_service_directory.domain_controller.dns_ip_addresses)
 }
 
+output "domain_controller_security_group_id" {
+  value = aws_directory_service_directory.domain_controller.security_group_id
+}
+
 resource "aws_ssm_parameter" "password" {
   name  = "AD_Password"
   type  = "SecureString"

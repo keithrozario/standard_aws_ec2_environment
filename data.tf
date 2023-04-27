@@ -3,3 +3,5 @@ locals {
     project = "WindowsFSX"
   }
 }
+
+data "aws_region" "current" {}
