@@ -22,7 +22,8 @@ data "aws_ami" "amazon-linux-2023" {
 
   filter {
     name   = "name"
-    values = ["al2023-ami-*-kernel-6.1-x86_64"]
+    values = ["amzn2-ami-hvm-*-x86_64-ebs"]
+    # values = ["al2023-ami-*-kernel-6.1-x86_64"]
   }
 }
 

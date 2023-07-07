@@ -1,6 +1,6 @@
 resource "aws_security_group" "allow_all_egress" {
-  name        = "allow_ingress_from_workspaces"
-  description = "Allow RDP Ingress from workspaces"
+  name        = "Allow all egress"
+  description = "Allow all egress"
   vpc_id      = module.vpc.vpc_id
 
   egress{
@@ -10,16 +10,26 @@ resource "aws_security_group" "allow_all_egress" {
       cidr_blocks      = ["0.0.0.0/0"]
       ipv6_cidr_blocks = ["::/0"]
   }
-
-  ingress{
-      from_port        = 80
-      to_port          = 80
-      protocol         = "tcp"
-      cidr_blocks      = ["10.0.0.0/16"]  # allow only from internal VPC
-  }
   
   tags = {
     Name = "allow_all_egress"
+  }
+}
+
+resource "aws_security_group" "vpc_endpoint_sg" {
+  name        = "Allow all ingress from internal"
+  description = "Allow all ingress from internal"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress{
+      from_port        = 443
+      to_port          = 443
+      protocol         = "tcp"
+      cidr_blocks      = [module.vpc.vpc_cidr_block]
+  }
+  
+  tags = {
+    Name = "vpc_endpoint_sg"
   }
 }
 

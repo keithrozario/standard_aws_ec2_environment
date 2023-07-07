@@ -41,19 +41,18 @@ module "vpc" {
   tags = local.common_tags
 }
 
-module "alb" {
-  source  = "terraform-aws-modules/alb/aws"
-  version = "~> 8.0"
+# module "alb" {
+#   source  = "terraform-aws-modules/alb/aws"
+#   version = "~> 8.0"
 
-  name = "load-balancer-public"
+#   name = "load-balancer-public"
 
-  load_balancer_type = "application"
+#   load_balancer_type = "application"
 
-  vpc_id             = module.vpc.vpc_id
-  subnets            = module.vpc.public_subnets
-  security_groups    = [aws_security_group.load_balancer_public.id]
-
-}
+#   vpc_id             = module.vpc.vpc_id
+#   subnets            = module.vpc.public_subnets
+#   security_groups    = [aws_security_group.load_balancer_public.id]
+# }
 
 # module "windows_ec2" {
 #  source                 = "./ec2_windows"
@@ -65,8 +64,8 @@ module "alb" {
 
 module "linux_ec2" {
   source                 = "./ec2_linux"
-  subnet_ids             = [module.vpc.private_subnets[0]]
-  vpc_security_group_ids = [module.vpc.default_security_group_id]
+  subnet_ids             = module.vpc.private_subnets
+  vpc_security_group_ids = [aws_security_group.allow_all_egress.id]
   common_tags            = local.common_tags
 }
 
@@ -86,7 +85,7 @@ resource "aws_vpc_endpoint" "endpoints" {
   service_name      = "com.amazonaws.${data.aws_region.current.name}.${each.key}"
   vpc_endpoint_type = "Interface"
   subnet_ids = module.vpc.private_subnets
-  security_group_ids = [module.vpc.default_security_group_id]
+  security_group_ids = [aws_security_group.vpc_endpoint_sg.id]
   private_dns_enabled = true
 }
 
@@ -95,20 +94,20 @@ resource "aws_vpc_endpoint" "s3" {
   service_name = "com.amazonaws.${data.aws_region.current.name}.s3"
 }
 
-module "efs" {
-  source = "./efs"
-  subnet_ids  = module.vpc.private_subnets
-  vpc_id = module.vpc.vpc_id
-  vpc_cidr_block = module.vpc.vpc_cidr_block
-}
+# module "efs" {
+#   source = "./efs"
+#   subnet_ids  = module.vpc.private_subnets
+#   vpc_id = module.vpc.vpc_id
+#   vpc_cidr_block = module.vpc.vpc_cidr_block
+# }
 
-module sftp {
-  source = "./transfer_family"
-  subnet_ids  = module.vpc.private_subnets
-  vpc_id = module.vpc.vpc_id
-  efs_id = module.efs.efs_id
-  vpc_cidr_block = module.vpc.vpc_cidr_block
-}
+# module sftp {
+#   source = "./transfer_family"
+#   subnet_ids  = module.vpc.private_subnets
+#   vpc_id = module.vpc.vpc_id
+#   efs_id = module.efs.efs_id
+#   vpc_cidr_block = module.vpc.vpc_cidr_block
+# }
 
 # module "AD" {
 # # The amin password will be randomly generated and set inside a ssm parameter: "AD_Password"
@@ -175,4 +174,40 @@ module sftp {
 #   subnet_ids = module.vpc.database_subnets
 #   vpc_id = module.vpc.vpc_id
 #   vpc_cidr_block = module.vpc.vpc_cidr_block
+# }
+
+
+# module "tgw" {
+#   source  = "terraform-aws-modules/transit-gateway/aws"
+#   version = "~> 2.0"
+
+#   name        = "tgw-terraform"
+
+#   enable_auto_accept_shared_attachments = true
+
+#   vpc_attachments = {
+#     vpc = {
+#       vpc_id       = module.vpc.vpc_id
+#       subnet_ids   = module.vpc.private_subnets
+#       dns_support  = true
+#       ipv6_support = true
+
+#       tgw_routes = [
+#         {
+#           destination_cidr_block = "30.0.0.0/16"
+#         },
+#         {
+#           blackhole = true
+#           destination_cidr_block = "40.0.0.0/20"
+#         }
+#       ]
+#     }
+#   }
+
+#   ram_allow_external_principals = true
+#   ram_principals = [307990089504]
+
+#   tags = {
+#     Purpose = "tgw-complete-example"
+#   }
 # }
